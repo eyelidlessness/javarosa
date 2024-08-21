@@ -132,4 +132,73 @@ public class IndexedRepeatTest {
         assertThat(scenario.answerOf("/data/repeat2[1]/from_repeat1"), is(stringAnswer("index1")));
         assertThat(scenario.answerOf("/data/repeat2[2]/from_repeat1"), is(stringAnswer("index2")));
     }
+
+    @Test
+    public void help_i_do_not_understand() throws Exception {
+        Scenario scenario = Scenario.init("indexed-repeat", html(
+            head(
+                title("indexed-repeat"),
+                model(
+                    mainInstance(t("data id=\"indexed-repeat\"",
+                        t("r1-d1",
+                            t("inside-r1-d1"),
+                            t("r1-d2",
+                                t("inside-r1-d2"),
+                                t("r1-d3",
+                                    t("inside-r1-d3")))),
+
+                        t("r2-d1",
+                            t("inside-r2-d1"),
+                            t("from-r1-d1"),
+                            t("r2-d2",
+                                t("inside-r2-d2"),
+                                t("from-r1-d2-a"),
+                                t("from-r1-d2-b"),
+                                t("r2-d3",
+                                    t("inside-r2-d3"),
+                                    t("from-r1-d3"))))
+                    )),
+                    bind("/data/r2-d1/from-r1-d1")
+                        .calculate("indexed-repeat(/data/r1-d1/inside-r1-d1, /data/r1-d1, position(..))"),
+                    bind("/data/r2-d1/r2-d2/from-r1-d2-a")
+                        .calculate("indexed-repeat(/data/r1-d1/r1-d2/inside-r1-d2, /data/r1-d1, position(../..), /data/r1-d1/r1-d2, position(..))")
+                )
+            ),
+            body(
+                repeat("/data/r1-d1",
+                    input("/data/r1-d1/inside-r1-d1"),
+                    repeat("/data/r1-d1/r1-d2",
+                        input("/data/r1-d1/r1-d2/inside-r1-d2"),
+                        repeat("/data/r1-d1/r1-d2/r1-d3",
+                            input("/data/r1-d1/r1-d2/r1-d3/inside-r1-d3")))),
+
+                repeat("/data/r2-d1",
+                    input("/data/r2-d1/inside-r2-d1"),
+                    repeat("/data/r2-d1/r2-d2",
+                        input("/data/r2-d1/r2-d2/inside-r2-d2"),
+                        repeat("/data/r2-d1/r2-d2/r2-d3",
+                            input("/data/r2-d1/r2-d2/r2-d3/inside-r2-d3"))))
+            ))
+        );
+
+        scenario.createNewRepeat("/data/r1-d1");
+        scenario.createNewRepeat("/data/r2-d1");
+        scenario.createNewRepeat("/data/r1-d1[1]/r1-d2");
+        scenario.createNewRepeat("/data/r2-d1[1]/r2-d2");
+        scenario.createNewRepeat("/data/r1-d1[2]/r1-d2");
+        scenario.createNewRepeat("/data/r2-d1[2]/r2-d2");
+        scenario.answer("/data/r1-d1[1]/inside-r1-d1", "[1]");
+        scenario.answer("/data/r1-d1[1]/r1-d2[1]/inside-r1-d2", "[1][1]");
+        scenario.answer("/data/r1-d1[1]/r1-d2[2]/inside-r1-d2", "[1][2]");
+        scenario.answer("/data/r1-d1[2]/inside-r1-d1", "[2]");
+        scenario.answer("/data/r1-d1[2]/r1-d2[1]/inside-r1-d2", "[2][1]");
+        scenario.answer("/data/r1-d1[2]/r1-d2[2]/inside-r1-d2", "[2][2]");
+
+        assertThat(scenario.answerOf(("/data/r2-d1[1]/from-r1-d1")), is(stringAnswer(("[1]"))));
+        assertThat(scenario.answerOf(("/data/r2-d1[1]/r2-d2[1]/from-r1-d2-a")), is(stringAnswer(("[1][1]"))));
+        assertThat(scenario.answerOf(("/data/r2-d1[1]/r2-d2[2]/from-r1-d2-a")), is(stringAnswer(("[1][2]"))));
+        assertThat(scenario.answerOf(("/data/r2-d1[2]/from-r1-d1")), is(stringAnswer(("[2]"))));
+        assertThat(scenario.answerOf(("/data/r2-d1[2]/r2-d2[1]/from-r1-d2-a")), is(stringAnswer(("[2][1]"))));
+        assertThat(scenario.answerOf(("/data/r2-d1[2]/r2-d2[2]/from-r1-d2-a")), is(stringAnswer(("[2][2]"))));
+    }
 }
